@@ -1,25 +1,30 @@
+#!/bin/bash
+
 url="$1"
 wlist="/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt"
 
-function mkd() {
-	mkdir -p dirhunter
-}
+# Ensure output dir exists
+mkdir -p dirhunter
 
-if [ -d "dirhunter" ]; then 
-	echo "dirhunter already exists."
-else
-	mkd
-fi 
+# Output file
+outfile="dirhunter/result.txt"
+echo "" > "$outfile"   # clear file
 
+# Safe URL normalization (remove trailing slash)
+base="${url%/}"
 
 while IFS= read -r directory; do
-    list="${url}${directory}"
-    # echo $list
-    # curl -o /dev/null --silent -Iw "%{http_code}" $list
-    response_code=$(curl -o /dev/null --silent -Iw "%{http_code}" "$list")
-    echo "URL: $list - HTTP Code: $response_code" 
-	
-	echo "$list - HTTP Code: $response_code" >> dirhunter/result.txt
 
-    
+    # Skip empty lines & comments
+    [[ -z "$directory" || "$directory" =~ ^# ]] && continue
+
+    # Build URL
+    list="${base}/${directory}"
+
+    # Fetch response code
+    response_code=$(curl -o /dev/null --silent -Iw "%{http_code}" "$list")
+
+    echo "URL: $list - HTTP Code: $response_code"
+    echo "$list - HTTP Code: $response_code" >> "$outfile"
+
 done < "$wlist"
